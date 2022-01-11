@@ -51,10 +51,15 @@ class FileShuttle(object):
         this function does not take a file-like object.
         """
         file_path = pathlib.Path(file_path)
+        if not file_path.is_absolute():
+            # non-absolute paths should be relative to flask's root to match normal flask.send_file
+            file_abs_path = pathlib.Path(self.app.root_path) / file_path
+        else:
+            file_abs_path = file_path
 
         sendfile_type = request.headers.get('X-Sendfile-Type')
         if sendfile_type == 'X-Accel-Redirect':
-            return self._send_file_nginx(file_path, mimetype)
+            return self._send_file_nginx(file_abs_path, mimetype)
         elif sendfile_type is not None:
             raise TypeError(f"Unknown X-Sendfile-Type '{sendfile_type}'")
         return send_file(
